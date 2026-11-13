@@ -512,7 +512,30 @@ function checkHtml({ repo, base }) {
       } else if (contents.ok) {
         row(true, 'الرمز يقرأ ملفّات المستودع.');
       }
-      row(true, 'تأكّد من صلاحيّة الكتابة.', 'لا يمكن فحص الكتابة من غير الكتابة فعلًا. في إعدادات الرمز يجب أن تكون Contents على Read and write، لا Read-only. إن كانت كذلك فسجّل الدخول إلى اللوحة الآن.');
+      // Write test that changes nothing: ask GitHub to move main to the commit
+      // it already points to. Only a token with Contents: Read and write may
+      // update a branch; the branch itself stays exactly where it is.
+      var ref = await gh('/repos/' + OWNER + '/' + REPO + '/git/ref/heads/main', token);
+      if (!ref.ok) {
+        row(false, 'تعذّر فحص صلاحيّة الحفظ (' + ref.status + ').', 'المستودع بلا فرع main بعد. أخبر Claude ليرفع ملفّات الموقع إليه.');
+        return;
+      }
+      var sha = (await ref.json()).object.sha;
+      var probe = await fetch('https://api.github.com/repos/' + OWNER + '/' + REPO + '/git/refs/heads/main', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sha: sha, force: false }),
+        cache: 'no-store',
+      });
+      if (probe.ok) {
+        row(true, 'الرمز يملك صلاحيّة الحفظ (Contents: Read and write).', 'فحصتُ ذلك من غير أيّ تغيير في المستودع. تستطيع الحفظ والنشر من اللوحة.');
+      } else if (probe.status === 403) {
+        row(false, 'الرمز لا يملك صلاحيّة الحفظ: Contents على Read-only.', 'هذا سبب رسالة «Resource not accessible by personal access token». افتح github.com/settings/personal-access-tokens، ثمّ رمز najwa-dashboard، ثمّ Edit، وغيّر Repository permissions ← Contents إلى Read and write، ثمّ Update. لا تتغيّر قيمة الرمز، فلا تحتاج إلى لصقه من جديد.');
+      } else if (probe.status === 422) {
+        row(false, 'تغيّر المستودع أثناء الفحص.', 'أعد الفحص بعد لحظة.');
+      } else {
+        row(false, 'تعذّر فحص صلاحيّة الحفظ (' + probe.status + ').', 'تأكّد في إعدادات الرمز أنّ Contents على Read and write.');
+      }
     } catch (err) {
       row(false, 'تعذّر الاتّصال بـ GitHub.', 'تأكّد من اتّصال الإنترنت وحاول مرّة أخرى.');
     } finally {
