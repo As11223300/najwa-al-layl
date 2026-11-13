@@ -329,6 +329,16 @@ function adminHtml({ base, immutableVersion }) {
 // keeps every line and space exactly as written.
 function adminJs(base) {
   return `(function () {
+  // A token pasted from a note or a message often carries a space or a line
+  // break, which GitHub rejects as an invalid token: strip them as it is typed.
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT') return;
+    var label = (t.getAttribute('aria-label') || '').toLowerCase();
+    if (label.indexOf('access token') < 0 && label.indexOf('رمز الوصول') < 0) return;
+    var clean = t.value.replace(/[\\s\\u200b-\\u200f\\u202a-\\u202e\\u2066-\\u2069\\ufeff]+/g, '');
+    if (clean !== t.value) { t.value = clean; t.dispatchEvent(new Event('input', { bubbles: true })); }
+  }, true);
   if (!window.CMS) return;
   var css = ${JSON.stringify(previewCss(base))};
   try { CMS.registerPreviewStyle(css, { raw: true }); } catch (e) { console.warn(e); }
@@ -394,6 +404,129 @@ body { direction: rtl; font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-si
 `;
 }
 
+function checkHtml({ repo, base }) {
+  const [owner, name] = repo.split('/');
+  return `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>فحص رمز الدخول | نجوى الليل</title>
+<link rel="icon" href="${base}favicon.svg" type="image/svg+xml">
+<style>
+  @font-face { font-family: 'Amiri'; font-weight: 400; src: url('${base}admin/fonts/amiri-400.woff2') format('woff2'); }
+  @font-face { font-family: 'Aref Ruqaa'; font-weight: 700; src: url('${base}admin/fonts/aref-ruqaa-700.woff2') format('woff2'); }
+  @font-face { font-family: 'Noto Naskh Arabic'; font-weight: 400; src: url('${base}admin/fonts/noto-naskh-400.woff2') format('woff2'); }
+  :root { color-scheme: light; }
+  body { margin: 0; background: #f1e7d1 url('${base}admin/textures/paper.jpg'); background-blend-mode: multiply; color: #1b1c30;
+         font-family: 'Noto Naskh Arabic', 'Amiri', serif; font-size: 1.05rem; line-height: 1.9; }
+  main { max-width: 38rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  h1 { font-family: 'Aref Ruqaa', 'Amiri', serif; color: #1a2160; font-size: 2.4rem; line-height: 1.5; margin: 0 0 .5rem; }
+  p { margin: 0 0 1rem; }
+  label { display: block; margin: 1.5rem 0 .4rem; }
+  input { width: 100%; box-sizing: border-box; padding: .7rem .9rem; font: 1rem ui-monospace, monospace; direction: ltr;
+          border: 1px solid #b9b4c9; border-radius: 2px; background: #fffdf7; color: #1b1c30; }
+  input:focus { outline: 2px solid #1a2160; outline-offset: 2px; }
+  button { margin-top: 1rem; padding: .65rem 1.6rem; font: inherit; color: #f3ead5; background: #121844; border: 0; border-radius: 2px; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: default; }
+  ol { list-style: none; padding: 0; margin: 2rem 0 0; }
+  li { padding: .9rem 1rem; margin-bottom: .6rem; border: 1px solid #d6cdb5; border-radius: 2px; background: rgb(255 253 247 / .6); }
+  li b { display: block; }
+  .ok b::before { content: '✓ '; color: #1d6b3a; }
+  .bad b::before { content: '✗ '; color: #9b1c1c; }
+  .ok { border-color: #a9cdb4; } .bad { border-color: #e0a9a9; }
+  .note { font-size: .95rem; color: #4b4a62; }
+  a { color: #1a2160; }
+  code { direction: ltr; unicode-bidi: isolate; font-size: .9em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>فحص رمز الدخول</h1>
+  <p>الصق رمز الدخول إلى اللوحة لتعرف هل يقبله GitHub، وهل يصل إلى مستودع <code>${repo}</code>.</p>
+  <p class="note">يُرسَل الرمز إلى GitHub وحده (api.github.com) للفحص، ولا يُحفظ في أيّ مكان. أغلق الصفحة بعد الفحص.</p>
+  <form id="f" autocomplete="off">
+    <label for="t">رمز الوصول (Personal Access Token)</label>
+    <input id="t" type="password" spellcheck="false" autocapitalize="off" placeholder="github_pat_…">
+    <button id="go" type="submit">افحص الرمز</button>
+  </form>
+  <ol id="out" aria-live="polite"></ol>
+  <p class="note" style="margin-top:2rem"><a href="./">العودة إلى لوحة التحكّم</a></p>
+</main>
+<script>
+(function () {
+  var OWNER = ${JSON.stringify(owner)}, REPO = ${JSON.stringify(name)};
+  var out = document.getElementById('out');
+  function row(ok, title, detail) {
+    var li = document.createElement('li'); li.className = ok ? 'ok' : 'bad';
+    var b = document.createElement('b'); b.textContent = title; li.appendChild(b);
+    if (detail) { var s = document.createElement('span'); s.textContent = detail; li.appendChild(s); }
+    out.appendChild(li);
+  }
+  function gh(path, token) {
+    return fetch('https://api.github.com' + path, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+  }
+  document.getElementById('f').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    out.textContent = '';
+    var input = document.getElementById('t');
+    var raw = input.value;
+    var token = raw.replace(/[\\s\\u200b-\\u200f\\u202a-\\u202e\\u2066-\\u2069\\ufeff]+/g, '');
+    var btn = document.getElementById('go'); btn.disabled = true;
+    try {
+      if (!token) { row(false, 'لم تلصق رمزًا.'); return; }
+      if (token !== raw) row(true, 'أزلتُ مسافات أو أسطرًا زائدة من الرمز.', 'كانت هذه على الأرجح سبب رسالة «الرمز غير صالح». اللوحة صارت تزيلها تلقائيًا أيضًا.');
+      if (/^github_pat_/.test(token)) row(true, 'شكل الرمز صحيح: رمز دقيق الصلاحيّات (fine-grained).');
+      else if (/^gh[pousr]_/.test(token)) row(true, 'هذا رمز من النوع الكلاسيكيّ (classic).', 'يعمل إن كانت له صلاحيّة repo، لكنّ الرمز الدقيق (fine-grained) أكثر أمانًا لأنّه يقتصر على مستودع واحد.');
+      else { row(false, 'هذا لا يبدو رمز GitHub.', 'رمز الوصول الدقيق يبدأ بـ github_pat_ ويُعرض مرّة واحدة فقط عند إنشائه. إن لم تنسخه حينها فأنشئ رمزًا جديدًا.'); }
+
+      var me = await gh('/user', token);
+      if (me.status === 401) {
+        row(false, 'GitHub يرفض هذا الرمز (401).', 'الأسباب المعتادة: نُسخ ناقصًا، أو حُذف، أو انتهت صلاحيّته، أو أُعيد إنشاؤه فتغيّر. أنشئ رمزًا جديدًا وانسخه كاملًا بزرّ النسخ بجانبه.');
+        return;
+      }
+      if (!me.ok) { row(false, 'تعذّر الاتّصال بـ GitHub (' + me.status + ').', 'حاول مرّة أخرى بعد قليل.'); return; }
+      var user = await me.json();
+      row(true, 'GitHub يقبل الرمز. صاحبه: ' + user.login);
+      if (user.login.toLowerCase() !== OWNER.toLowerCase()) row(false, 'الرمز لحساب آخر غير ' + OWNER + '.', 'أنشئ الرمز وأنت داخل حساب ' + OWNER + '.');
+
+      var repo = await gh('/repos/' + OWNER + '/' + REPO, token);
+      if (repo.status === 404) {
+        row(false, 'الرمز لا يصل إلى المستودع ' + OWNER + '/' + REPO + '.', 'إمّا أنّ المستودع غير موجود بعد (أنشئه باسم ' + REPO + ' ونوع Private)، وإمّا أنّ الرمز لم يُمنح إيّاه: في إعدادات الرمز اختر Only select repositories ثمّ ' + REPO + '. إن أنشأت المستودع بعد الرمز فعدّل الرمز وأضفه.');
+        return;
+      }
+      if (!repo.ok) { row(false, 'تعذّر قراءة المستودع (' + repo.status + ').'); return; }
+      var info = await repo.json();
+      row(true, 'الرمز يصل إلى المستودع ' + info.full_name + (info.private ? ' (خاصّ).' : '.'));
+      if (!info.private) row(false, 'تنبيه: هذا المستودع عامّ.', 'المسوّدات فيه يمكن لأيّ أحد قراءتها. اجعله Private من Settings.');
+
+      var contents = await gh('/repos/' + OWNER + '/' + REPO + '/contents/', token);
+      if (contents.status === 403) {
+        row(false, 'الرمز لا يملك صلاحيّة قراءة المحتوى.', 'في إعدادات الرمز: Repository permissions ← Contents ← Read and write.');
+        return;
+      }
+      if (contents.status === 404) {
+        row(false, 'المستودع فارغ بعد.', 'لم تُرفع ملفّات الموقع إليه بعد. أخبر Claude ليرفعها، ثمّ أعد الفحص.');
+      } else if (contents.ok) {
+        row(true, 'الرمز يقرأ ملفّات المستودع.');
+      }
+      row(true, 'تأكّد من صلاحيّة الكتابة.', 'لا يمكن فحص الكتابة من غير الكتابة فعلًا. في إعدادات الرمز يجب أن تكون Contents على Read and write، لا Read-only. إن كانت كذلك فسجّل الدخول إلى اللوحة الآن.');
+    } catch (err) {
+      row(false, 'تعذّر الاتّصال بـ GitHub.', 'تأكّد من اتّصال الإنترنت وحاول مرّة أخرى.');
+    } finally {
+      btn.disabled = false;
+      input.value = '';
+    }
+  });
+})();
+</script>
+</body>
+</html>
+`;
+}
+
 export function writeAdmin({ root, publicOut, base, write, cms }) {
   if (!cms || !cms.repo || !cms.siteUrl) return;
   const { repo, siteUrl, branch = 'main' } = cms;
@@ -406,6 +539,7 @@ export function writeAdmin({ root, publicOut, base, write, cms }) {
   write(path.join(dir, 'vendor', 'immutable.es.js'), fs.readFileSync(path.join(modules, 'immutable/dist/immutable.es.js')));
   write(path.join(dir, 'index.html'), adminHtml({ base, immutableVersion }));
   write(path.join(dir, 'admin.js'), adminJs(base));
+  write(path.join(dir, 'check', 'index.html'), checkHtml({ repo, base }));
   write(path.join(dir, 'config.yml'), YAML.stringify(JSON.parse(JSON.stringify(cmsConfig({ cms: { repo, siteUrl, branch }, base }))), { lineWidth: 0 }));
   const sveltia = path.join(modules, '@sveltia/cms');
   const version = JSON.parse(fs.readFileSync(path.join(sveltia, 'package.json'), 'utf8')).version;
