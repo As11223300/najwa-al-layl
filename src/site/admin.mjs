@@ -43,6 +43,9 @@ export function cmsConfig({ cms, base }) {
       name: 'github',
       repo: cms.repo,
       branch: cms.branch || 'main',
+      // Sign-in with a fine-grained token only: "Sign in with GitHub" would
+      // need a separate OAuth server, which this site does not run.
+      auth_methods: ['token'],
       commit_messages: {
         create: 'إنشاء «{{slug}}» في {{collection}}',
         update: 'تحديث «{{slug}}» في {{collection}}',
