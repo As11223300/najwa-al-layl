@@ -22,6 +22,8 @@ env:
 
 jobs:
   publish:
+    # Only in the private studio repository.
+    if: github.repository == 'As11223300/najwa-al-layl-studio'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
