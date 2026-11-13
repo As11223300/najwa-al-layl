@@ -26,6 +26,10 @@ jobs:
     if: github.repository == 'As11223300/najwa-al-layl-studio'
     runs-on: ubuntu-latest
     steps:
+      - name: Check that the studio repository is private
+        if: ${{ !github.event.repository.private }}
+        run: |
+          echo "::warning title=This repository is public::Drafts saved in the dashboard can be read by anyone while this repository is public. Make it private: Settings → General → Danger Zone → Change repository visibility → Private."
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
