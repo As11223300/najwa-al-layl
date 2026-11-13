@@ -1,6 +1,3 @@
 ---
-placeholder: true
+# Write a few lines about yourself below the closing dashes.
 ---
-هنا تكتب نبذةً قصيرة عنك: من أنت، ومتى بدأت الكتابة، وماذا تعني لك «نجوى الليل».
-
-يمكنك أيضًا أن تذكر طريقةً للتواصل، أو أين نُشرت نصوصك من قبل.

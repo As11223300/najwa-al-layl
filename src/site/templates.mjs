@@ -93,7 +93,7 @@ export function createTemplates({ config, base, site }) {
   const novelLabel = site.novels.length > 1 ? 'الروايات' : 'الرواية';
   const NAV = [
     ['issues', 'الأعداد'],
-    ...(site.novels.length ? [['novels', novelLabel]] : []),
+    ['novels', novelLabel],
     ['poems', 'الشعر'],
     ['articles', 'المقالات'],
     ['archive', 'الفهرس'],
@@ -140,7 +140,7 @@ ${main}
   <div class="colophon-inner">
     <p class="colophon-name">${crescent}${e(config.name)}</p>
     <p class="colophon-line">${e(config.tagline)}</p>
-    <p class="colophon-meta">كتابة وتحرير: ${e(config.author)}، ${countPieces(site.pieces.length)}</p>
+    ${site.pieces.length || config.author ? `<p class="colophon-meta">${config.author ? `كتابة وتحرير: ${e(config.author)}` : ''}${config.author && site.pieces.length ? '، ' : ''}${site.pieces.length ? countPieces(site.pieces.length) : ''}</p>` : ''}
   </div>
 </footer>
 </body>
@@ -241,27 +241,33 @@ ${main}
   function home() {
     const c = site.current;
     const backIssues = site.issues.filter((x) => x !== c).reverse();
-    const main = `<h1 class="sr-only">${e(config.name)}</h1>
-${c ? cover(c) : '<section class="page-col"><p>لم يصدر أيّ عدد بعد. أضِف مجموعة في <code>content/collections</code>.</p></section>'}
-<div class="home-rest">
-  ${homeNovels()}
-  ${
-    site.themes.length
-      ? `<section class="home-section" aria-labelledby="h-themes">
+    const opening = `<section class="cover cover-opening" aria-labelledby="cover-opening">
+  <div class="cover-inner">
+    <div class="cover-head">
+      <h1 class="cover-title" id="cover-opening">${e(config.name)}</h1>
+      ${config.tagline ? `<p class="cover-sub">${e(config.tagline)}</p>` : ''}
+      <p class="cover-intro">الصفحات الأولى في الطريق.</p>
+    </div>
+    <div class="cover-mark" aria-hidden="true">${constellation('najwa-al-layl', 5)}</div>
+  </div>
+</section>`;
+    const sections = [
+      homeNovels(),
+      site.themes.length
+        ? `<section class="home-section" aria-labelledby="h-themes">
     <h2 class="section-title" id="h-themes">ملفّات</h2>
     ${themeRows(site.themes)}
   </section>`
-      : ''
-  }
-  ${
-    backIssues.length
-      ? `<section class="home-section" aria-labelledby="h-back">
+        : '',
+      backIssues.length
+        ? `<section class="home-section" aria-labelledby="h-back">
     <h2 class="section-title" id="h-back">أعداد سابقة</h2>
     ${miniCovers(backIssues)}
   </section>`
-      : ''
-  }
-</div>`;
+        : '',
+    ].filter(Boolean);
+    const main = `${c ? `<h1 class="sr-only">${e(config.name)}</h1>\n${cover(c)}` : opening}
+${sections.length ? `<div class="home-rest">${sections.join('\n')}</div>` : ''}`;
     return layout({ section: 'home', bodyClass: 'page-home', main });
   }
 
@@ -419,12 +425,11 @@ ${c ? cover(c) : '<section class="page-col"><p>لم يصدر أيّ عدد بع�
     });
   }
 
-  function aboutPage(html, placeholder) {
+  function aboutPage(html) {
     const main = `<article class="piece">
   <div class="piece-col">
     <header class="piece-head"><h1 class="piece-title">عن الكاتب</h1></header>
-    ${placeholder ? '<p class="placeholder-note">نصّ تجريبيّ: اكتب نبذتك في <code>content/about.md</code>.</p>' : ''}
-    <div class="prose">${html}</div>
+    ${html ? `<div class="prose">${html}</div>` : '<p class="quiet-note">النبذة قريبًا.</p>'}
   </div>
 </article>`;
     return layout({ title: 'عن الكاتب', section: 'about', bodyClass: 'page-about', main });
@@ -433,7 +438,7 @@ ${c ? cover(c) : '<section class="page-col"><p>لم يصدر أيّ عدد بع�
   function notFound() {
     const main = `<div class="page-col page-head not-found">
   <h1 class="page-title">لم نجد هذه الصفحة</h1>
-  <p class="page-lede">ربّما تغيّر عنوانها أو لم تُنشر بعد. جرّب <a href="${url('archive/')}">البحث في الفهرس</a> أو عُد إلى <a href="${url()}">العدد الحالي</a>.</p>
+  <p class="page-lede">ربّما تغيّر عنوانها أو لم تُنشر بعد. جرّب <a href="${url('archive/')}">البحث في الفهرس</a> أو عُد إلى <a href="${url()}">الصفحة الرئيسة</a>.</p>
 </div>`;
     return layout({ title: 'صفحة غير موجودة', section: '', bodyClass: 'page-404', main });
   }
@@ -456,7 +461,7 @@ ${c ? cover(c) : '<section class="page-col"><p>لم يصدر أيّ عدد بع�
         ${constellation(`${n.slug}-cover`, 7)}
         <span class="book-cover-title">${e(n.title)}</span>
         ${n.tagline && size === 'large' ? `<span class="book-cover-tagline">${e(n.tagline)}</span>` : ''}
-        <span class="book-cover-author">${e(author)}</span>`;
+        ${author ? `<span class="book-cover-author">${e(author)}</span>` : ''}`;
     const cls = `book-cover book-cover-${size}${n.coverUrl ? ' has-image' : ''}`;
     return link
       ? `<a class="${cls}" href="${novelUrl(n)}" aria-label="${e(n.title)}">${inner}</a>`
@@ -478,6 +483,22 @@ ${c ? cover(c) : '<section class="page-col"><p>لم يصدر أيّ عدد بع�
   }
 
   function novelsPage() {
+    if (!site.novels.length) {
+      const blank = { slug: 'riwaya-qadima', title: 'قريبًا', tagline: 'رواية', author: '', coverUrl: null };
+      const main = `<div class="novel-coming">
+  <section class="novel-hero">
+    <div class="novel-hero-inner">
+      ${bookCover(blank)}
+      <div class="novel-intro">
+        <h1 class="page-title">الرواية</h1>
+        <p class="novel-status">رواية تُنشر هنا فصلًا فصلًا</p>
+        <div class="synopsis"><p>الفصل الأول في الطريق. حين يُنشر تجد هنا الغلاف والملخّص وفهرس الفصول، وتستطيع أن تقرأ وتضع علاماتك وتعود إلى حيث توقّفت.</p></div>
+      </div>
+    </div>
+  </section>
+</div>`;
+      return layout({ title: 'الرواية', section: 'novels', bodyClass: 'page-novel', main });
+    }
     // With a single novel, the section page is that novel's page.
     if (site.novels.length === 1) return novelPage(site.novels[0]);
     const main = `<div class="page-col page-head">

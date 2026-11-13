@@ -182,6 +182,7 @@ export function loadNovels(dir) {
   for (const slug of fs.readdirSync(dir).sort()) {
     const folder = path.join(dir, slug);
     const file = path.join(folder, 'novel.md');
+    if (slug.startsWith('_') || slug.startsWith('.')) continue;
     if (!fs.statSync(folder).isDirectory() || !fs.existsSync(file)) continue;
     const { data, body } = parseFrontMatter(fs.readFileSync(file, 'utf8'), file);
     if (data.draft === true) continue;

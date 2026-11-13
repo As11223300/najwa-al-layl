@@ -137,14 +137,14 @@ export async function generate({ root, outDir, publicOut, base = '/' }) {
     });
   }
 
-  if (site.novels.length) page('novels', t.novelsPage());
+  page('novels', t.novelsPage());
   for (const n of site.novels) {
     page(`novels/${n.slug}`, t.novelPage(n));
     for (const c of n.chapters) page(`novels/${n.slug}/${c.slug}`, t.chapterPage(n, c, markdown(c.body)));
   }
 
-  const aboutHtml = site.about ? markdown(site.about.body) : '<p>لم تُكتب النبذة بعد.</p>';
-  page('about', t.aboutPage(aboutHtml, !site.about || site.about.data.placeholder === true));
+  const aboutBody = site.about ? site.about.body.trim() : '';
+  page('about', t.aboutPage(aboutBody ? markdown(aboutBody) : ''));
   write(path.join(outDir, '404.html'), t.notFound());
 
   // Theme files sit beside the pages so Vite resolves and bundles them.

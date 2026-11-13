@@ -4,7 +4,7 @@ A personal Arabic literary journal for poems, articles and a novel published cha
 
 **دليل بالعربيّة:** [GUIDE-ar.md](GUIDE-ar.md) (Arabic step-by-step guide).
 
-Every piece in `content/` right now is a **sample** marked `placeholder: true`. Replace the samples with your own writing.
+The site starts clean: there is no sample writing. Until you publish, the home page shows a quiet cover with the site's name, and the novel section shows a blank book marked «قريبًا» ("coming soon"). Copy-ready templates for every kind of file are in `content/_templates/` (that folder is never published). Set your name in `site.config.mjs` (`author`) first.
 
 ---
 
@@ -89,7 +89,9 @@ The first paragraph appears on the cover. Later paragraphs appear on the issue's
 
 The newest `season` collection becomes the home-page cover. Add `featured: true` to put a different one there. Issues are numbered automatically, oldest first.
 
-### The novel: `content/novels/bayt-fi-akhir-al-shita/`
+### The novel: `content/novels/<your-novel>/`
+
+Start it by creating `content/novels/<your-novel>/novel.md` (on github.com, type `<your-novel>/novel.md` as the file name inside `content/novels`; the slash creates the folder). Copy the template from `content/_templates/novel/`.
 
 `novel.md`:
 
@@ -104,7 +106,7 @@ cover: cover.jpg      # optional: an image in the same folder
 The synopsis, in as many paragraphs as you like.
 ```
 
-**To add a chapter**, create the next numbered file in `chapters/`, for example `chapters/04-al-matar.md`:
+**To add a chapter**, create the next numbered file in `chapters/`, for example `chapters/01-al-bidaya.md`:
 
 ```markdown
 ---
@@ -120,7 +122,7 @@ To start a second novel, copy the whole novel folder under a new name. The secti
 
 ### Common to every file
 
-- `placeholder: true` shows the "sample text" note; delete the line when the text is yours.
+- `placeholder: true` shows a "sample text" note on a piece, if you ever want one.
 - `draft: true` hides a piece, chapter or novel without deleting it.
 - Dates are written `YYYY-MM-DD`; they appear in Arabic with Arabic-Indic digits.
 

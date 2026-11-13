@@ -5,13 +5,13 @@ export default {
   name: 'نجوى الليل',
 
   // One line under the name in the footer colophon.
-  tagline: 'قصائد ومقالات تُكتب في آخر الليل',
+  tagline: 'قصائد ومقالات ورواية تُكتب في آخر الليل',
 
-  // Shown in the colophon and the page metadata. Replace with your name.
-  author: 'اسم الكاتب',
+  // Your name or pen name, shown in the colophon and on the novel cover.
+  author: '',
 
   // Used in <meta name="description"> on the home page.
-  description: 'نجوى الليل: مجلّة شخصيّة للشعر والمقالات، تصدر في أعداد فصليّة وملفّات.',
+  description: 'نجوى الليل: مجلّة شخصيّة للشعر والمقالات ورواية تُنشر فصلًا فصلًا.',
 
   // Date and number formatting. "ar-u-nu-arab" gives Arabic-Indic digits and
   // month names such as «يناير». For Levantine month names («كانون الثاني»),

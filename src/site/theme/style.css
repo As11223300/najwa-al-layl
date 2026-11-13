@@ -1731,3 +1731,24 @@ a.book-cover:hover {
     display: none;
   }
 }
+
+/* ---------- before the first pages ---------- */
+
+.cover-opening .cover-inner {
+  min-height: min(62vh, 36rem);
+  align-content: center;
+}
+/* Paper between the opening cover and the colophon, so the two ink fields
+   never run together. */
+main:has(> .cover-opening:last-child) {
+  padding-bottom: clamp(3.5rem, 10vw, 6rem);
+}
+.cover-opening .contents,
+.novel-coming .book-cover-title {
+  opacity: 0.85;
+}
+.quiet-note {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--ink-2);
+}

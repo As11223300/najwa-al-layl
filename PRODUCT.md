@@ -43,7 +43,7 @@ Confirmed by the author:
 
 ## Evidence on Hand
 
-The author has hundreds of real pieces, but none are in the repository yet. Until they are imported, any sample text must be clearly labeled as a placeholder. Never present invented poems, articles, dates, publication credits or reader testimonials as the author's.
+The author has hundreds of real pieces and a novel, none yet in the repository. All sample content was removed at the author's request; the site ships with empty states («الصفحات الأولى في الطريق»، «قريبًا») and copy-ready templates in `content/_templates/`. Never add invented poems, articles, chapters, dates, publication credits or reader testimonials as the author's.
 
 ## Product Principles
 
