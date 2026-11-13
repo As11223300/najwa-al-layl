@@ -2,6 +2,8 @@
 
 A personal Arabic literary journal for poems, articles and a novel published chapter by chapter. It is built from plain Markdown files and published as a static site on GitHub Pages.
 
+**دليل بالعربيّة:** [GUIDE-ar.md](GUIDE-ar.md) (Arabic step-by-step guide).
+
 Every piece in `content/` right now is a **sample** marked `placeholder: true`. Replace the samples with your own writing.
 
 ---
