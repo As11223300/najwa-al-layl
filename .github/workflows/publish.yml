@@ -1,0 +1,49 @@
+# Runs in the private studio repository. Every save in the dashboard is a
+# commit here; this builds the public site (published pieces only) and pushes
+# the finished files to the public repository's gh-pages branch, which GitHub
+# Pages serves. Drafts never leave this private repository.
+name: Publish the site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: true
+
+env:
+  PUBLIC_REPO: As11223300/najwa-al-layl
+  BASE_PATH: /najwa-al-layl/
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Push the built site to the public repository
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: |
+          if [ -z "$PUBLISH_TOKEN" ]; then
+            echo "::error::The PUBLISH_TOKEN secret is missing. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          cd dist
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publish ${GITHUB_SHA::7}"
+          git push -q --force "https://x-access-token:${PUBLISH_TOKEN}@github.com/${PUBLIC_REPO}.git" gh-pages
+          echo "Published to https://github.com/${PUBLIC_REPO}/tree/gh-pages"

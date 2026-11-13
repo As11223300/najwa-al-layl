@@ -2,6 +2,16 @@
 // Edit these freely; every page is regenerated from them.
 
 export default {
+  // The admin dashboard (/admin/) edits this private repository; every save
+  // there rebuilds the site and publishes it to siteUrl.
+  cms: {
+    repo: 'As11223300/najwa-al-layl-studio',
+    branch: 'main',
+    siteUrl: 'https://as11223300.github.io/najwa-al-layl/',
+  },
+
+  // name, tagline, author and description below are defaults: once the
+  // author edits «معلومات الموقع» in the dashboard, content/settings.json wins.
   name: 'نجوى الليل',
 
   // One line under the name in the footer colophon.

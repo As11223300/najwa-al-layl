@@ -1,185 +1,60 @@
 # نجوى الليل
 
-A personal Arabic literary journal for poems, articles and a novel published chapter by chapter. It is built from plain Markdown files and published as a static site on GitHub Pages.
+A personal Arabic literary journal: poems, articles, curated issues and a novel published chapter by chapter. It is a static site generated from Markdown and published on GitHub Pages, with an Arabic admin dashboard at `/admin/`.
 
-**دليل بالعربيّة:** [GUIDE-ar.md](GUIDE-ar.md) (Arabic step-by-step guide).
+**دليل بالعربيّة:** [GUIDE-ar.md](GUIDE-ar.md) is the full Arabic guide: setup, sign-in, writing, publishing and security.
 
-The site starts clean: there is no sample writing. Until you publish, the home page shows a quiet cover with the site's name, and the novel section shows a blank book marked «قريبًا» ("coming soon"). Copy-ready templates for every kind of file are in `content/_templates/` (that folder is never published). Set your name in `site.config.mjs` (`author`) first.
+- Site: https://as11223300.github.io/najwa-al-layl/
+- Dashboard: https://as11223300.github.io/najwa-al-layl/admin/
 
----
+## How it is put together
 
-## 1. Edit your writing on github.com (no tools needed)
+| Repository | Visibility | Holds |
+|---|---|---|
+| `As11223300/najwa-al-layl-studio` | private | this source, all writing (drafts included), uploaded images |
+| `As11223300/najwa-al-layl` | public | only the built site, on the `gh-pages` branch that GitHub Pages serves |
 
-You can do everything from the browser:
+1. The dashboard ([Sveltia CMS](https://sveltiacms.app), served from the site itself) commits to the private studio repository.
+2. `.github/workflows/publish.yml` runs there on every push. It builds the site and force-pushes `dist/` to the public repository's `gh-pages` branch, using the `PUBLISH_TOKEN` Actions secret: a fine-grained token with Contents read/write on the public repository only.
+3. What never reaches the public repository: entries with the «منشور» switch off (`published: false`) or `draft: true`, and uploaded images that no published entry uses.
 
-1. Open your repository on github.com and go into the `content/` folder.
-2. To **edit** a piece, open its file, click the pencil icon, change the text, then click **Commit changes**.
-3. To **add** a piece, open the right folder (for example `content/poems`), click **Add file → Create new file**, give it a name such as `my-new-poem.md`, write it (format below), then click **Commit changes**.
-4. Wait about two minutes. GitHub rebuilds and republishes the site on its own; you can watch progress in the repository's **Actions** tab.
+Sign-in uses a fine-grained GitHub token (Contents read/write on the studio repository only). The author pastes it into the dashboard, and it is kept in that browser only. Nothing secret is in this repository or on the site.
 
-File names become web addresses, so use simple Latin letters, numbers and dashes (`laylat-al-matar.md`, not spaces or Arabic).
+## Content
 
-## 2. What goes where
+| Folder | What | Written by |
+|---|---|---|
+| `content/poems/*.md` | poems; the body keeps every line and leading space | dashboard or hand |
+| `content/articles/*.md` | articles in Markdown, with footnotes and images | dashboard or hand |
+| `content/collections/*.md` | `kind: season` (numbered issues) or `kind: theme` (dossiers) | dashboard or hand |
+| `content/novels/<novel>.md` | a novel: title, tagline, status, cover, synopsis | dashboard |
+| `content/chapters/*.md` | chapters: `novel: <novel slug>`, `order: <n>` | dashboard |
+| `content/novels/<novel>/novel.md` + `chapters/NN-*.md` | the older hand-written novel layout, still supported | hand |
+| `content/settings.json` | site name, tagline, author, description (overrides `site.config.mjs`) | dashboard |
+| `content/about.md` | the about page | dashboard or hand |
+| `public/uploads/` | uploaded images | dashboard |
+| `content/_templates/` | copy-ready templates for hand editing; never published | |
 
-```
-content/
-  poems/              one file per poem
-  articles/           one file per article
-  collections/        seasonal issues and thematic dossiers
-  novels/
-    <novel-name>/
-      novel.md        title, synopsis, status, optional cover image
-      chapters/       one file per chapter: 01-..., 02-..., in reading order
-  about.md            the «عن الكاتب» page
-site.config.mjs       site name, tagline, your name, date format
-```
+Front matter is YAML. An entry the build can't use (no title, bad date, unknown novel) is skipped with a warning in the build log, rather than failing the whole build.
 
-### A poem: `content/poems/laylat-al-matar.md`
-
-```markdown
----
-title: ليلة المطر
-date: 2025-03-02
-collections: [spring-2025]
----
-أوّل سطر في القصيدة
-    سطرٌ ثانٍ بمسافة في أوّله
-
-مقطع جديد بعد سطر فارغ
-```
-
-Line breaks and leading spaces are kept exactly as you type them. A blank line starts a new stanza.
-
-### An article: `content/articles/an-al-sahar.md`
-
-```markdown
----
-title: عن السهر
-date: 2025-03-10
-summary: سطر أو سطران يظهران تحت العنوان.
-collections: [spring-2025]
----
-نصّ المقالة بصيغة Markdown.
-
-## عنوان فرعي
-
-فقرة فيها هامش.[^1]
-
-***
-
-[^1]: نصّ الهامش.
-```
-
-`***` on its own line draws the three-star section break.
-
-### A collection: `content/collections/spring-2025.md`
-
-```markdown
----
-title: عنوان العدد
-kind: season          # season = a numbered issue, theme = a dossier
-label: ربيع ٢٠٢٥       # shown beside the issue number
-date: 2025-03-20
-contents:             # optional: the order of pieces in the issue
-  - laylat-al-matar
-  - an-al-sahar
----
-The first paragraph appears on the cover. Later paragraphs appear on the issue's own page.
-```
-
-The newest `season` collection becomes the home-page cover. Add `featured: true` to put a different one there. Issues are numbered automatically, oldest first.
-
-### The novel: `content/novels/<your-novel>/`
-
-Start it by creating `content/novels/<your-novel>/novel.md` (on github.com, type `<your-novel>/novel.md` as the file name inside `content/novels`; the slash creates the folder). Copy the template from `content/_templates/novel/`.
-
-`novel.md`:
-
-```markdown
----
-title: اسم الرواية
-tagline: رواية
-status: ongoing       # ongoing or complete
-date: 2025-01-10
-cover: cover.jpg      # optional: an image in the same folder
----
-The synopsis, in as many paragraphs as you like.
-```
-
-**To add a chapter**, create the next numbered file in `chapters/`, for example `chapters/01-al-bidaya.md`:
-
-```markdown
----
-title: المطر
-date: 2025-02-21
----
-نصّ الفصل…
-```
-
-The number at the start of the file name sets the order. It does not appear on the site: chapter names («الفصل الرابع») are written out automatically. Previous/next links, the chapter index, reading time, bookmarks and "continue reading" all update by themselves.
-
-To start a second novel, copy the whole novel folder under a new name. The section then becomes «الروايات», a shelf of books.
-
-### Common to every file
-
-- `placeholder: true` shows a "sample text" note on a piece, if you ever want one.
-- `draft: true` hides a piece, chapter or novel without deleting it.
-- Dates are written `YYYY-MM-DD`; they appear in Arabic with Arabic-Indic digits.
-
-## 3. Publish on GitHub Pages (one-time setup)
-
-1. Create a GitHub account at github.com if you don't have one.
-2. Create a new **empty** repository: click **+ → New repository**, name it (for example `najwa-al-layl`), choose **Public**, and don't add a README.
-3. Upload this project to it, using one of these:
-   - **From a computer with Git:** unzip the project, open a terminal in its folder, and run the commands in section 5.
-   - **From the browser only:** on the empty repository's page, click **uploading an existing file**, then drag in everything from the unzipped folder, including the hidden `.github` folder, and click **Commit changes**. Some systems hide folders whose names start with a dot; turn on "show hidden files" first. The `.github/workflows/deploy.yml` file is what publishes the site.
-4. In the repository, open **Settings → Pages**, and under **Build and deployment → Source** choose **GitHub Actions**.
-5. Open the **Actions** tab. The "Deploy to GitHub Pages" run starts on every change to `main`; start it by hand with **Run workflow** the first time if needed.
-6. When it finishes, your site is live at:
-   `https://<your-username>.github.io/<repository-name>/`
-
-If the repository is named `<your-username>.github.io`, the site lives at `https://<your-username>.github.io/` instead. The build works out the right address for you.
-
-## 4. Change the look or the settings
-
-- `site.config.mjs` holds the site name, tagline, author name, and the date style (`ar-u-nu-arab` gives «يناير»; `ar-SY-u-nu-arab` gives «كانون الثاني»).
-- `DESIGN.md` describes the design system: colours, type, components and rules.
-- The templates live in `src/site/templates.mjs`, the styles in `src/site/theme/style.css`, and the browser behaviour (search, night mode, bookmarks) in `src/site/theme/site.js`.
-- The paper texture is generated by `scripts/make-paper-texture.py`.
-
-## 5. Work on your own computer (optional)
-
-You need [Node.js](https://nodejs.org) 22 or newer and Git.
+## Local development
 
 ```bash
-git clone https://github.com/<your-username>/<repository-name>.git
-cd <repository-name>
 npm install
+```
+
+```bash
 npm run dev
 ```
 
-Open http://localhost:5173. Pages update as soon as you save a file in `content/`.
+Then open http://localhost:5173. Pages regenerate on save. `npm run build` writes `dist/`; set `BASE_PATH=/najwa-al-layl/` to build for the published address.
 
-To publish what you changed:
+## Code map
 
-```bash
-git add -A
-git commit -m "Add a new chapter"
-git push
-```
-
-`npm run build` writes the finished site to `dist/`, and `npm run preview` serves that build locally.
-
-The first time you upload from a computer, run this from the project folder instead:
-
-```bash
-git remote add origin https://github.com/<your-username>/<repository-name>.git
-git branch -M main
-git push -u origin main
-```
-
-## 6. Good to know
-
-- Search covers poem and article titles and full text, and ignores differences in hamza, taa marbuta, alef maqsura and diacritics.
-- Bookmarks, reading position and the night/day choice are stored in each reader's own browser. Nothing is sent anywhere, and there is no account.
-- Fonts (Aref Ruqaa, Amiri, Noto Naskh Arabic) are bundled with the site, not loaded from Google.
+- `src/site/content.mjs` reads content.
+- `src/site/generate.mjs` builds the pages.
+- `src/site/templates.mjs` holds the HTML.
+- `src/site/theme/` holds the styles, search, night mode and the novel reader.
+- `src/site/admin.mjs` builds the dashboard config, preview templates and self-hosted Sveltia files.
+- `DESIGN.md` documents the design system.
+- `scripts/make-paper-texture.py` regenerates the paper grain.

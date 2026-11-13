@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Marked } from 'marked';
 import markedFootnote from 'marked-footnote';
-import { loadContent, linkContent } from './content.mjs';
+import { loadContent, linkContent, warnings } from './content.mjs';
+import { writeAdmin } from './admin.mjs';
 import { createTemplates, escapeHtml, endMark } from './templates.mjs';
 import { arabicDigits, normalizeArabic } from './arabic.mjs';
 
@@ -93,11 +94,24 @@ function prune(dir) {
 
 export async function generate({ root, outDir, publicOut, base = '/' }) {
   const configModule = await import(`${path.join(root, 'site.config.mjs')}?t=${Date.now()}`);
-  const config = configModule.default;
-  const markdown = createMarkdown();
-
   const loaded = loadContent(root);
   const site = { ...loaded, ...linkContent(loaded) };
+
+  // Site information edited in the dashboard (content/settings.json) wins
+  // over the defaults in site.config.mjs.
+  const config = { ...configModule.default };
+  for (const key of ['name', 'tagline', 'author', 'description']) {
+    if (typeof site.settings[key] === 'string') config[key] = site.settings[key].trim();
+  }
+  if (!config.name) config.name = configModule.default.name;
+
+  // Uploaded images are stored with the published site's address
+  // (/najwa-al-layl/uploads/...); rewrite them for whatever base this build
+  // uses, so they also show in local previews.
+  const uploads = (value) => value.replace(/^(?:\/[^/"'\s]+)?\/uploads\//, `${base}uploads/`);
+  const baseMarkdown = createMarkdown();
+  const markdown = (source) =>
+    baseMarkdown(source).replace(/(src|href)="((?:\/[^/"\s]+)?\/uploads\/[^"]*)"/g, (_, attr, value) => `${attr}="${uploads(value)}"`);
 
   for (const c of [...site.issues, ...site.themes]) {
     const parts = c.body.trim().split(/\n\s*\n/);
@@ -110,7 +124,10 @@ export async function generate({ root, outDir, publicOut, base = '/' }) {
   for (const n of site.novels) {
     n.html = markdown(n.body.trim() || 'لم يُكتب الملخّص بعد.');
     n.excerpt = excerpt(plainText(n.body.trim().split(/\n\s*\n/)[0] || ''), 180);
-    n.coverUrl = n.cover ? `${base}novels/${n.slug}/cover${path.extname(n.cover)}` : null;
+    if (n.coverFile) n.coverUrl = `${base}novels/${encodeURIComponent(n.slug)}/cover${path.extname(n.coverFile)}`;
+    else if (/^https?:\/\//.test(n.cover)) n.coverUrl = n.cover;
+    else if (n.cover) n.coverUrl = uploads(n.cover.startsWith('/') ? n.cover : `/uploads/${n.cover}`);
+    else n.coverUrl = null;
   }
 
   const t = createTemplates({ config, base, site });
@@ -151,16 +168,40 @@ export async function generate({ root, outDir, publicOut, base = '/' }) {
   copyDir(path.join(root, 'src/site/theme'), path.join(outDir, 'assets'));
 
   // Files served as they are: the search index, the favicon, .nojekyll.
-  copyDir(path.join(root, 'public'), publicOut);
-  write(path.join(publicOut, 'search.json'), JSON.stringify(index));
-  for (const n of site.novels) {
-    if (n.cover) {
-      write(path.join(publicOut, 'novels', n.slug, `cover${path.extname(n.cover)}`), fs.readFileSync(n.cover));
+  // Uploaded images are copied only when published content uses them, so
+  // an image uploaded for a private draft never reaches the public site.
+  const publicDir = path.join(root, 'public');
+  for (const entry of fs.readdirSync(publicDir, { withFileTypes: true })) {
+    if (entry.name === 'uploads') continue;
+    const from = path.join(publicDir, entry.name);
+    if (entry.isDirectory()) copyDir(from, path.join(publicOut, entry.name));
+    else write(path.join(publicOut, entry.name), fs.readFileSync(from));
+  }
+  const used = new Set();
+  const collectUploads = (html) => {
+    for (const m of String(html).matchAll(/\/uploads\/([^"'\s)?#]+)/g)) used.add(decodeURIComponent(m[1]));
+  };
+  for (const file of [...written]) if (file.endsWith('.html')) collectUploads(fs.readFileSync(file, 'utf8'));
+  for (const n of site.novels) if (n.coverUrl) collectUploads(n.coverUrl);
+  for (const name of used) {
+    const from = path.join(publicDir, 'uploads', name);
+    if (from.startsWith(path.join(publicDir, 'uploads') + path.sep) && fs.existsSync(from) && fs.statSync(from).isFile()) {
+      write(path.join(publicOut, 'uploads', name), fs.readFileSync(from));
     }
   }
+  write(path.join(publicOut, 'search.json'), JSON.stringify(index));
+  for (const n of site.novels) {
+    if (n.coverFile) write(path.join(publicOut, 'novels', n.slug, `cover${path.extname(n.coverFile)}`), fs.readFileSync(n.coverFile));
+  }
+
+  // The admin dashboard at /admin/.
+  writeAdmin({ root, publicOut, base, write, cms: configModule.default.cms });
 
   prune(outDir);
   prune(publicOut);
 
-  return { pages: site.pieces.length, issues: site.issues.length, themes: site.themes.length };
+  if (warnings.length) {
+    console.warn(`\n[najwa] ${warnings.length} content warning(s):\n  - ${warnings.join('\n  - ')}\n`);
+  }
+  return { pages: site.pieces.length, issues: site.issues.length, themes: site.themes.length, warnings: [...warnings] };
 }
