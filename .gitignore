@@ -1,6 +1,0 @@
-node_modules
-dist
-.claude/settings.local.json
-.claude/skills/impeccable/scripts/bin/
-.site/
-.site-public/
