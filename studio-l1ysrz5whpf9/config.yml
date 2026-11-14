@@ -1,0 +1,310 @@
+backend:
+  name: github
+  repo: As11223300/najwa-al-layl-studio
+  branch: main
+  auth_methods:
+    - token
+  commit_messages:
+    create: إنشاء «{{slug}}» في {{collection}}
+    update: تحديث «{{slug}}» في {{collection}}
+    delete: حذف «{{slug}}» من {{collection}}
+    uploadMedia: رفع صورة «{{path}}»
+    deleteMedia: حذف صورة «{{path}}»
+site_url: https://as11223300.github.io/najwa-al-layl/
+display_url: https://as11223300.github.io/najwa-al-layl/
+logo:
+  src: /najwa-al-layl/favicon.svg
+media_folder: public/uploads
+public_folder: /najwa-al-layl/uploads
+slug:
+  encoding: unicode
+  clean_accents: false
+  sanitize_replacement: "-"
+collections:
+  - name: poems
+    label: القصائد
+    label_singular: قصيدة
+    icon: edit_note
+    folder: content/poems
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}}"
+    sortable_fields:
+      - date
+      - title
+    preview_path: poems/{{slug}}/
+    fields:
+      - label: العنوان
+        name: title
+        widget: string
+      - label: التاريخ
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        default: "{{now}}"
+      - label: منشور
+        name: published
+        widget: boolean
+        default: false
+        hint: اتركه مطفأً لتبقى مسوّدة خاصّة لا تظهر في الموقع. أشعله ثمّ احفظ لتُنشر.
+      - label: الأعداد والملفّات
+        name: collections
+        widget: relation
+        collection: issues
+        multiple: true
+        required: false
+        value_field: "{{slug}}"
+        search_fields:
+          - title
+        display_fields:
+          - title
+      - label: القصيدة
+        name: body
+        widget: text
+        hint: يُحفظ كلّ سطر وكلّ مسافة كما تكتبهما. السطر الفارغ يبدأ مقطعًا جديدًا.
+  - name: articles
+    label: المقالات
+    label_singular: مقالة
+    icon: article
+    folder: content/articles
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}}"
+    sortable_fields:
+      - date
+      - title
+    preview_path: articles/{{slug}}/
+    fields:
+      - label: العنوان
+        name: title
+        widget: string
+      - label: التاريخ
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        default: "{{now}}"
+      - label: منشور
+        name: published
+        widget: boolean
+        default: false
+        hint: اتركه مطفأً لتبقى مسوّدة خاصّة لا تظهر في الموقع. أشعله ثمّ احفظ لتُنشر.
+      - label: سطر تحت العنوان
+        name: summary
+        widget: text
+        required: false
+      - label: الأعداد والملفّات
+        name: collections
+        widget: relation
+        collection: issues
+        multiple: true
+        required: false
+        value_field: "{{slug}}"
+        search_fields:
+          - title
+        display_fields:
+          - title
+      - label: المقالة
+        name: body
+        widget: markdown
+  - name: issues
+    label: الأعداد والملفّات
+    label_singular: عدد أو ملفّ
+    icon: auto_stories
+    folder: content/collections
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}}"
+    sortable_fields:
+      - date
+      - title
+    preview_path: issues/{{slug}}/
+    fields:
+      - label: العنوان
+        name: title
+        widget: string
+      - label: النوع
+        name: kind
+        widget: select
+        default: season
+        options:
+          - label: عدد فصليّ (مرقّم)
+            value: season
+          - label: ملفّ موضوعيّ
+            value: theme
+      - label: الموسم أو الوصف القصير
+        name: label
+        widget: string
+        required: false
+        hint: "مثل: شتاء ٢٠٢٦"
+      - label: تاريخ الصدور
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        default: "{{now}}"
+      - label: منشور
+        name: published
+        widget: boolean
+        default: false
+        hint: اتركه مطفأً لتبقى مسوّدة خاصّة لا تظهر في الموقع. أشعله ثمّ احفظ لتُنشر.
+      - label: غلاف الصفحة الرئيسة
+        name: featured
+        widget: boolean
+        default: false
+        required: false
+        hint: أحدث عدد فصليّ يظهر غلافًا تلقائيًا. أشعل هذا لتختار عددًا آخر.
+      - label: التقديم
+        name: body
+        widget: markdown
+        required: false
+        hint: الفقرة الأولى تظهر على الغلاف، والباقي في صفحة العدد.
+  - name: novels
+    label: الروايات
+    label_singular: رواية
+    icon: menu_book
+    folder: content/novels
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}}"
+    preview_path: novels/{{slug}}/
+    fields:
+      - label: العنوان
+        name: title
+        widget: string
+      - label: سطر تحت العنوان على الغلاف
+        name: tagline
+        widget: string
+        default: رواية
+        required: false
+      - label: الحالة
+        name: status
+        widget: select
+        default: ongoing
+        options:
+          - label: تُنشر فصلًا فصلًا
+            value: ongoing
+          - label: مكتملة
+            value: complete
+      - label: التاريخ
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        default: "{{now}}"
+      - label: منشور
+        name: published
+        widget: boolean
+        default: false
+        hint: اتركه مطفأً لتبقى مسوّدة خاصّة لا تظهر في الموقع. أشعله ثمّ احفظ لتُنشر.
+      - label: صورة الغلاف
+        name: cover
+        widget: image
+        required: false
+        hint: اختياريّة، ويُفضّل أن تكون طوليّة بنسبة ٢ إلى ٣. من دونها يُصمَّم غلاف بالخطّ والنجوم.
+      - label: اسم المؤلّف على الغلاف
+        name: author
+        widget: string
+        required: false
+        hint: اتركه فارغًا ليُستخدم اسمك من «معلومات الموقع».
+      - label: الملخّص
+        name: body
+        widget: markdown
+        required: false
+  - name: chapters
+    label: فصول الروايات
+    label_singular: فصل
+    icon: bookmark
+    folder: content/chapters
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{fields.order}}. {{title}}"
+    sortable_fields:
+      - order
+      - date
+      - title
+    view_groups:
+      - label: الرواية
+        field: novel
+    fields:
+      - label: الرواية
+        name: novel
+        widget: relation
+        collection: novels
+        value_field: "{{slug}}"
+        search_fields:
+          - title
+        display_fields:
+          - title
+      - label: رقم الفصل
+        name: order
+        widget: number
+        value_type: int
+        min: 1
+        default: 1
+        hint: يحدّد ترتيب الفصل. لإعادة الترتيب غيّر الأرقام. يُكتب اسم الفصل («الفصل الأول») تلقائيًا.
+      - label: العنوان
+        name: title
+        widget: string
+      - label: التاريخ
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        default: "{{now}}"
+      - label: منشور
+        name: published
+        widget: boolean
+        default: false
+        hint: اتركه مطفأً لتبقى مسوّدة خاصّة لا تظهر في الموقع. أشعله ثمّ احفظ لتُنشر.
+      - label: نصّ الفصل
+        name: body
+        widget: markdown
+  - name: pages
+    label: الموقع
+    icon: settings
+    files:
+      - name: settings
+        label: معلومات الموقع
+        file: content/settings.json
+        fields:
+          - label: اسم الموقع
+            name: name
+            widget: string
+          - label: العبارة تحت الاسم
+            name: tagline
+            widget: string
+            required: false
+          - label: اسمك كما يظهر في الموقع
+            name: author
+            widget: string
+            required: false
+          - label: وصف الموقع لمحرّكات البحث
+            name: description
+            widget: text
+            required: false
+      - name: about
+        label: عن الكاتب
+        file: content/about.md
+        preview_path: about/
+        fields:
+          - label: النبذة
+            name: body
+            widget: markdown
+            required: false

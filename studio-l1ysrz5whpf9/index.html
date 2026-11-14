@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>لوحة التحكّم | نجوى الليل</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="cms-config-url" type="application/yaml" href="./config.yml">
+<script type="importmap">{"imports":{"https://unpkg.com/immutable@5.1.10/dist/immutable.es.js":"/najwa-al-layl/studio-l1ysrz5whpf9/vendor/immutable.es.js"}}</script>
+<script>
+  // Open the dashboard in Arabic unless the author picked another language.
+  try {
+    var key = 'sveltia-cms.prefs';
+    var prefs = JSON.parse(localStorage.getItem(key) || '{}') || {};
+    if (!prefs.locale || prefs.locale === 'auto') { prefs.locale = 'ar'; localStorage.setItem(key, JSON.stringify(prefs)); }
+  } catch (_) {}
+</script>
+<style>
+  /* Writing fields follow the direction of what is typed: Arabic paragraphs
+     run right to left, a Latin quotation left to right. */
+  textarea, input[type='text'], [contenteditable='true'] { unicode-bidi: plaintext; text-align: start; }
+  @font-face { font-family: 'Amiri'; font-weight: 400; font-display: swap; src: url('/najwa-al-layl/studio-l1ysrz5whpf9/fonts/amiri-400.woff2') format('woff2'); }
+  @font-face { font-family: 'Noto Naskh Arabic'; font-weight: 400; font-display: swap; src: url('/najwa-al-layl/studio-l1ysrz5whpf9/fonts/noto-naskh-400.woff2') format('woff2'); }
+  textarea, [contenteditable='true'] { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 1.15rem; line-height: 1.9; }
+</style>
+</head>
+<body>
+<script src="./locale-ar.js"></script>
+<script src="./sveltia-cms.js"></script>
+<script src="./admin.js"></script>
+</body>
+</html>
